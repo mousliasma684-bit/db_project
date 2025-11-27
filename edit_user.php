@@ -1,6 +1,7 @@
 <?php
 require 'db_connect.php';
 
+
 // Check if ID is provided in URL
 if (!isset($_GET['id'])) {
     echo "No user ID provided.";

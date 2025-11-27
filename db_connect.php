@@ -1,16 +1,20 @@
 <?php
-require_once "config.php";
-
-function connectDB() {
-    global $host, $user, $pass, $dbname;
-    $logFile = __DIR__ . "/db_errors.log";
+function getConnection() {
+    $config = require __DIR__ . '/config.php';
 
     try {
-        $conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        return $conn;
+        $dsn = "mysql:host={$config['host']};dbname={$config['db']};charset=utf8mb4";
+        $pdo = new PDO($dsn, $config['user'], $config['pass'], [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+
+        return $pdo;
+
     } catch (PDOException $e) {
-        file_put_contents($logFile, date("Y-m-d H:i:s") . " - " . $e->getMessage() . PHP_EOL, FILE_APPEND);
-        return null;
+        // Optional: log the error
+        // file_put_contents('db_error.log', $e->getMessage() . PHP_EOL, FILE_APPEND);
+
+        die("Database connection failed: " . $e->getMessage());
     }
 }

@@ -1,0 +1,74 @@
+<?php
+require 'db_connect.php';
+
+$pdo = getConnection();
+
+// Step 1 — Get student ID from URL
+if (!isset($_GET['id'])) {
+    die("No student ID provided.");
+}
+
+$id = $_GET['id'];
+
+// Step 2 — Fetch student data
+$stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
+$stmt->execute([$id]);
+$student = $stmt->fetch();
+
+if (!$student) {
+    die("Student not found.");
+}
+
+// Step 3 — If form submitted, update the student
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $fullname = trim($_POST['fullname']);
+    $matricule = trim($_POST['matricule']);
+    $group_id = trim($_POST['group_id']);
+
+    if ($fullname === "" || $matricule === "" || $group_id === "") {
+        $error = "All fields are required.";
+    } else {
+        $update = $pdo->prepare("
+            UPDATE students 
+            SET fullname = ?, matricule = ?, group_id = ?
+            WHERE id = ?
+        ");
+        $update->execute([$fullname, $matricule, $group_id, $id]);
+
+        $success = "Student updated successfully!";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Update Student</title>
+</head>
+<body>
+
+<h2>Update Student</h2>
+
+<?php if (!empty($error)) echo "<p style='color:red;'>$error</p>"; ?>
+<?php if (!empty($success)) echo "<p style='color:green;'>$success</p>"; ?>
+
+<form method="POST">
+    Full Name:<br>
+    <input type="text" name="fullname" value="<?= htmlspecialchars($student['fullname']); ?>" required><br><br>
+
+    Matricule:<br>
+    <input type="text" name="matricule" value="<?= htmlspecialchars($student['matricule']); ?>" required><br><br>
+
+    Group ID:<br>
+    <input type="text" name="group_id" value="<?= htmlspecialchars($student['group_id']); ?>" required><br><br>
+
+    <button type="submit">Update</button>
+</form>
+
+<br>
+<a href="list_students.php">Back to list</a>
+
+</body>
+</html>

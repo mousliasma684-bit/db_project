@@ -1,10 +1,10 @@
 <?php
-require_once "db_connect.php";
+require 'db_connect.php';
 
-$conn = connectDB();
+$pdo = getConnection();
 
-if ($conn) {
-    echo "Connection successful";
+if ($pdo) {
+    echo "Connection successful!";
 } else {
-    echo "Connection failed";
+    echo "Connection failed!";
 }
