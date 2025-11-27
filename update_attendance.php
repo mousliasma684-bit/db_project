@@ -1,42 +1,59 @@
 <?php
-// Déterminer la date à modifier
-$today = $_GET['date'] ?? date('Y-m-d'); // Par défaut aujourd'hui
-$fileName = "attendance_" . $today . ".json";
 
-// Vérifier si le fichier existe
-if (!file_exists($fileName)) {
-    die("No attendance found for $today.");
+// 1. Vérifier la date
+$date = $_GET['date'] ?? null;
+if (!$date) {
+    die("Date manquante.");
 }
 
-// Charger l'attendance
+$fileName = "attendance_" . $date . ".json";
+
+if (!file_exists($fileName)) {
+    die("Le fichier d'attendance pour cette date n'existe pas.");
+}
+
+// Charger attendance existante
 $attendance = json_decode(file_get_contents($fileName), true);
 
-// Charger les étudiants pour info
+// Charger les étudiants
 $studentsFile = "students.json";
 if (!file_exists($studentsFile)) {
-    die("Aucun étudiant trouvé.");
+    die("Fichier students.json introuvable.");
 }
+
 $students = json_decode(file_get_contents($studentsFile), true);
 
-// Formulaire soumis : mise à jour
+// Si on soumet le formulaire
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach ($attendance as $index => $att) {
-        $id = $att['student_id'];
-        $status = $_POST['status'][$id] ?? 'absent';
-        $attendance[$index]['status'] = $status;
+
+    $newAttendance = [];
+
+    foreach ($students as $s) {
+        $status = $_POST['status'][$s['id']] ?? 'absent';
+        $newAttendance[] = [
+            "student_id" => $s['id'],
+            "status" => $status
+        ];
     }
 
-    file_put_contents($fileName, json_encode($attendance, JSON_PRETTY_PRINT));
-    echo "<h2>Attendance updated successfully for $today.</h2>";
-    echo "<a href='/Attendance/take_attendance.php'>
-            <button style='padding:10px 15px;'>Retour</button>
+    file_put_contents($fileName, json_encode($newAttendance, JSON_PRETTY_PRINT));
+
+    echo "<h2>Attendance updated successfully for $date.</h2>";
+    echo "<a href='/db_project/list_students_json.php'>
+            <button style='padding:10px 15px;'>Retour à la liste</button>
           </a>";
     exit;
 }
 
+// Convertir attendance en tableau indexé par student_id
+$attendanceMap = [];
+foreach ($attendance as $a) {
+    $attendanceMap[$a['student_id']] = $a['status'];
+}
+
 ?>
 
-<h2>Update Attendance for <?= $today ?></h2>
+<h2>Update Attendance for <?= $date ?></h2>
 
 <form method="POST">
 <table border="1" cellpadding="8" cellspacing="0">
@@ -46,18 +63,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <th>Groupe</th>
         <th>Présent / Absent</th>
     </tr>
-    <?php foreach ($attendance as $attItem):
-        // Récupérer info étudiant
-        $studentInfo = array_filter($students, fn($s) => $s['id'] == $attItem['student_id']);
-        $studentInfo = array_values($studentInfo)[0];
+
+    <?php foreach ($students as $s): 
+        $status = $attendanceMap[$s['id']] ?? 'absent';
     ?>
     <tr>
-        <td><?= $studentInfo['id'] ?></td>
-        <td><?= htmlspecialchars($studentInfo['fullname']) ?></td>
-        <td><?= htmlspecialchars($studentInfo['group']) ?></td>
+        <td><?= $s['id'] ?></td>
+        <td><?= htmlspecialchars($s['fullname']) ?></td>
+        <td><?= htmlspecialchars($s['group']) ?></td>
         <td>
-            <label><input type="radio" name="status[<?= $studentInfo['id'] ?>]" value="present" <?= $attItem['status']=='present' ? 'checked' : '' ?>> Present</label>
-            <label><input type="radio" name="status[<?= $studentInfo['id'] ?>]" value="absent" <?= $attItem['status']=='absent' ? 'checked' : '' ?>> Absent</label>
+            <label>
+                <input type="radio" 
+                    name="status[<?= $s['id'] ?>]" 
+                    value="present"
+                    <?= $status === 'present' ? 'checked' : '' ?>
+                > Present
+            </label>
+
+            <label>
+                <input type="radio" 
+                    name="status[<?= $s['id'] ?>]" 
+                    value="absent"
+                    <?= $status === 'absent' ? 'checked' : '' ?>
+                > Absent
+            </label>
         </td>
     </tr>
     <?php endforeach; ?>

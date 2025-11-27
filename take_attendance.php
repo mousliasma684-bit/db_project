@@ -1,21 +1,21 @@
 <?php
-// Nom du fichier pour aujourd'hui
+// File name for today's attendance
 $today = date('Y-m-d');
 $fileName = "attendance_" . $today . ".json";
 
-// Si le fichier d'aujourd'hui existe déjà
+// If today's attendance already exists
 if (file_exists($fileName)) {
     echo "<h2>Attendance for today has already been taken.</h2>";
-    echo "<a href='/Attendance/list_student.php'>
+    echo "<a href='/db_project/list_students_json.php'>
             <button style='padding:10px 15px;'>Retour à la liste des étudiants</button>
           </a> ";
-    echo "<a href='/Attendance/update_attendance.php?date=$today'>
+    echo "<a href='/db_project/update_attendance.php?date=$today'>
             <button style='padding:10px 15px;'>Modifier l'attendance</button>
           </a>";
     exit;
 }
 
-// Charger les étudiants
+// Load students
 $studentsFile = "students.json";
 
 if (!file_exists($studentsFile)) {
@@ -24,16 +24,17 @@ if (!file_exists($studentsFile)) {
 
 $students = json_decode(file_get_contents($studentsFile), true);
 
-if (!$students) {
+if (!is_array($students)) {
     die("Erreur de lecture du fichier students.json.");
 }
 
-// Si le formulaire est soumis
+// When form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $attendance = [];
 
     foreach ($students as $s) {
         $status = $_POST['status'][$s['id']] ?? 'absent';
+
         $attendance[] = [
             "student_id" => $s['id'],
             "status" => $status
@@ -43,15 +44,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     file_put_contents($fileName, json_encode($attendance, JSON_PRETTY_PRINT));
 
     echo "<h2>Attendance saved successfully for $today.</h2>";
-    echo "<a href='/Attendance/list_student.php'>
+    echo "<a href='/db_project/list_students_json.php'>
             <button style='padding:10px 15px;'>Retour à la liste des étudiants</button>
           </a> ";
-    echo "<a href='/Attendance/update_attendance.php?date=$today'>
+    echo "<a href='/db_project/update_attendance.php?date=$today'>
             <button style='padding:10px 15px;'>Modifier l'attendance</button>
           </a>";
     exit;
 }
-
 ?>
 
 <h2>Take Attendance for <?= $today ?></h2>
@@ -64,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <th>Groupe</th>
         <th>Présent / Absent</th>
     </tr>
+
     <?php foreach ($students as $s): ?>
     <tr>
         <td><?= $s['id'] ?></td>
@@ -75,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </td>
     </tr>
     <?php endforeach; ?>
+
 </table>
 
 <br>
