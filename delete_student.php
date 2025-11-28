@@ -1,17 +1,21 @@
 <?php
 require 'db_connect.php';
+$db = getConnection();
 
-$pdo = getConnection();
+if (!$db) die("Database connection failed!");
 
-if (!isset($_GET['id'])) {
-    die("No student ID provided.");
+$id = $_GET['id'] ?? null;
+
+if ($id) {
+    $sql = "DELETE FROM students WHERE id = ?";
+    $stmt = $db->prepare($sql);
+
+    try {
+        $stmt->execute([$id]);
+        echo "Student deleted.";
+    } catch (PDOException $e) {
+        echo "Error deleting student: " . $e->getMessage();
+    }
 }
 
-$id = $_GET['id'];
-
-$stmt = $pdo->prepare("DELETE FROM students WHERE id = ?");
-$stmt->execute([$id]);
-
-header("Location: list_students.php");
-exit;
-?>
+echo "<br><a href='list_students.php'>Back to list</a>";
